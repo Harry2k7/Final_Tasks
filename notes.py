@@ -1,5 +1,69 @@
 import argparse
+import json
+import os
 from datetime import datetime
+
+NOTES_FILE = "notes.json"
+
+
+def get_notes():
+    try:
+        if os.path.exists(NOTES_FILE):
+            with open(NOTES_FILE, "r", encoding = 'utf-8') as file:
+                return json.load(file)
+    except Exception as e:
+        print(f"Ошибка при чтении файла: {e}")
+    return []
+
+
+def save_notes(notes):
+    try:
+        with open(NOTES_FILE, "w", encoding='utf-8') as file:
+            json.dump(notes, file)
+    except Exception as e:
+        print(f"Ошибка при сохранении файла: {e}")
+
+
+def add_note(title, msg):
+    notes = get_notes()
+    note_id = len(notes) + 1
+    timestamp = str(datetime.now())
+    note = {"id": note_id, "title": title, "msg": msg, "timestamp": timestamp}
+    notes.append(note)
+    save_notes(notes)
+    print("Заметка успешно сохранена")
+
+
+def list_notes(date = None):
+    notes = get_notes()
+    if date:
+        notes = [note for note in notes if date in note["timestamp"]]
+    for note in notes:
+        print(
+            f'ID: {note["id"]}\nЗаголовок: {note["title"]}\nСообщение: {note["msg"]}\nВремя: {note["timestamp"]}\n')
+
+
+def edit_note(note_id, new_title, new_msg):
+    notes = get_notes()
+    for note in notes:
+        if note["id"] == note_id:
+            note["title"] = new_title
+            note["msg"] = new_msg
+            note["timestamp"] = str(datetime.now())
+            save_notes(notes)
+            print("Заметка успешно отредактирована")
+            return
+    print("Заметка не найдена")
+
+
+def delete_note(note_id):
+    notes = get_notes()
+    new_notes = [note for note in notes if note["id"] != note_id]
+    if len(new_notes) != len(notes):
+        save_notes(new_notes)
+        print("Заметка успешно удалена")
+    else:
+        print("Заметка не найдена")
 
 
 def main():
@@ -24,13 +88,13 @@ def main():
     args = parser.parse_args()
 
     if args.command == "add":
-        pass
+        add_note(args.title, args.msg)
     elif args.command == "list":
-        pass
+        list_notes(args.date)
     elif args.command == "edit":
-        pass
+        edit_note(args.id, args.title, args.msg)
     elif args.command == "delete":
-        pass
+        delete_note(args.id)
     else:
         parser.print_help()
         print()
@@ -45,19 +109,19 @@ def main():
             if command == "1":
                 title = input("Введите заголовок заметки: ")
                 msg = input("Введите текст заметки: ")
-                pass
+                add_note(title, msg)
             elif command == "2":
                 date = input(
                     "Введите дату заметки (или нажмите Enter, чтобы пропустить): ")
-                pass
+                list_notes(date if date else None)
             elif command == "3":
                 note_id = int(input("Введите ID заметки: "))
                 title = input("Введите новый заголовок заметки: ")
                 msg = input("Введите новый текст заметки: ")
-                pass
+                edit_note(note_id, title, msg)
             elif command == "4":
                 note_id = int(input("Введите ID заметки: "))
-                pass
+                delete_note(note_id)
             elif command == "0":
                 break
             else:
